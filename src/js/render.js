@@ -98,8 +98,10 @@ function drawPacman( ctx, p, frame ) {
   ctx.fill();
 }
 
-function drawGhost( ctx, g, color ) {
-  const { cx, cy } = cellCenter( g.x, g.y );
+function drawGhost( ctx, game, g, frame, color ) {
+  const { cx, cy: cellY } = cellCenter( g.x, g.y );
+  // Los que esperan en la pen rebotan sin cambiar de celda.
+  const cy = cellY + ( game.tick < g.releaseAt ? Math.sin( frame * 0.08 ) * 3 : 0 );
   const r = TILE / 2 - 1;
   const top = cy - r;
   const bottom = cy + r;
@@ -159,7 +161,7 @@ function draw( ctx, game, frame ) {
   drawDoor( ctx, grid );
   drawDots( ctx, grid );
   drawPacman( ctx, game.pacman, frame );
-  game.ghosts.forEach( ( g, i ) => drawGhost( ctx, g, GHOST_COLORS[ i ] || '#ff0000' ) );
+  game.ghosts.forEach( ( g, i ) => drawGhost( ctx, game, g, frame, GHOST_COLORS[ i ] || '#ff0000' ) );
   drawHUD( ctx, game, W );
 }
 
