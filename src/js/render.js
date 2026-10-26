@@ -70,10 +70,11 @@ function drawDots( ctx, grid ) {
   ctx.fillStyle = DOT_COLOR;
   for ( let y = 0; y < grid.length; y++ ) {
     for ( let x = 0; x < grid[ 0 ].length; x++ ) {
-      if ( grid[ y ][ x ] !== 2 ) continue;
+      const tile = grid[ y ][ x ];
+      if ( tile !== 2 && tile !== 4 ) continue;
       const { cx, cy } = cellCenter( x, y );
       ctx.beginPath();
-      ctx.arc( cx, cy, 2.5, 0, Math.PI * 2 );
+      ctx.arc( cx, cy, tile === 4 ? 6 : 2.5, 0, Math.PI * 2 );
       ctx.fill();
     }
   }
@@ -98,15 +99,27 @@ function drawPacman( ctx, p, frame ) {
   ctx.fill();
 }
 
-function drawGhost( ctx, g, color ) {
-  const { cx, cy } = cellCenter( g.x, g.y );
+function drawGhost( ctx, game, g, frame, color ) {
+  const { cx, cy: cellY } = cellCenter( g.x, g.y );
+  // Los que esperan en la pen rebotan sin cambiar de celda.
+  const cy = cellY + ( game.tick < g.releaseAt ? Math.sin( frame * 0.08 ) * 3 : 0 );
   const r = TILE / 2 - 1;
+
+  // Asustado: cuerpo azul; blanco intermitente en los ultimos frames.
+  const frightened = window.isFrightened( game );
+  const flashing =
+    frightened && game.frightenedUntil - game.tick <= window.FRIGHTENED_FLASH_FRAMES;
+  let bodyColor = color;
+  if ( frightened ) {
+    bodyColor = flashing && Math.floor( frame / 15 ) % 2 === 0 ? '#fff' : '#2222ff';
+  }
+
   const top = cy - r;
   const bottom = cy + r;
   const left = cx - r;
   const right = cx + r;
 
-  ctx.fillStyle = color;
+  ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.arc( cx, cy - 1, r, Math.PI, 0, false ); // cabeza
   ctx.lineTo( right, bottom );
@@ -159,7 +172,7 @@ function draw( ctx, game, frame ) {
   drawDoor( ctx, grid );
   drawDots( ctx, grid );
   drawPacman( ctx, game.pacman, frame );
-  game.ghosts.forEach( ( g, i ) => drawGhost( ctx, g, GHOST_COLORS[ i ] || '#ff0000' ) );
+  game.ghosts.forEach( ( g, i ) => drawGhost( ctx, game, g, frame, GHOST_COLORS[ i ] || '#ff0000' ) );
   drawHUD( ctx, game, W );
 }
 
