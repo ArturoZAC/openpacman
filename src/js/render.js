@@ -144,7 +144,8 @@ function drawHUD( ctx, game, W ) {
   ctx.fillText( 'VIDAS ' + game.lives, W * TILE - 8, 4 );
 }
 
-const GHOST_COLORS = [ '#ff0000', '#00ffff', '#ffb8ff', '#ffb852' ];
+// Orden = GHOST_STARTS: aggressive, ambusher, flanker, shy.
+const GHOST_COLORS = [ '#ff0000', '#ffb8ff', '#00ffff', '#ffb852' ];
 
 function draw( ctx, game, frame ) {
   const grid = game.grid;
