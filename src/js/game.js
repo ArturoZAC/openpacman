@@ -10,8 +10,9 @@ const DIRS = {
 };
 const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 
-const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
-const GHOST_SPEED = 0.1;    // 1/10 celda/frame
+const PACMAN_SPEED = 1 / 12;                // 1 celda cada 12 frames
+const GHOST_SPEED = 1 / 15;                 // 1 celda cada 15 frames
+const GHOST_SPEED_SCARED = GHOST_SPEED / 2; // 1/30
 
 // Estado inicial de un fantasma, segun su GHOST_STARTS.
 // exiting: los que arrancan dentro de la pen (y > 11) cruzan la puerta al salir.
