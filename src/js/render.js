@@ -104,12 +104,22 @@ function drawGhost( ctx, game, g, frame, color ) {
   // Los que esperan en la pen rebotan sin cambiar de celda.
   const cy = cellY + ( game.tick < g.releaseAt ? Math.sin( frame * 0.08 ) * 3 : 0 );
   const r = TILE / 2 - 1;
+
+  // Asustado: cuerpo azul; blanco intermitente en los ultimos frames.
+  const frightened = window.isFrightened( game );
+  const flashing =
+    frightened && game.frightenedUntil - game.tick <= window.FRIGHTENED_FLASH_FRAMES;
+  let bodyColor = color;
+  if ( frightened ) {
+    bodyColor = flashing && Math.floor( frame / 15 ) % 2 === 0 ? '#fff' : '#2222ff';
+  }
+
   const top = cy - r;
   const bottom = cy + r;
   const left = cx - r;
   const right = cx + r;
 
-  ctx.fillStyle = color;
+  ctx.fillStyle = bodyColor;
   ctx.beginPath();
   ctx.arc( cx, cy - 1, r, Math.PI, 0, false ); // cabeza
   ctx.lineTo( right, bottom );
