@@ -51,9 +51,13 @@ const MAZE = MAZE_STR.map( ( row ) => row.split( '' ).map( parseTile ) );
 
 const TUNNEL_ROW = 14;
 const PACMAN_START = { x: 13, y: 23 };
+// Orden del array = indice de color en render.js.
+// releaseDelay: frames de espera en la pen antes de salir.
 const GHOST_STARTS = [
-  { x: 13, y: 14, kind: 'hunter' }, // dentro de la pen
-  { x: 14, y: 14, kind: 'random' }, // dentro de la pen
+  { x: 13, y: 11, kind: 'aggressive', releaseDelay: 0 },   // fuera, sobre la puerta
+  { x: 12, y: 14, kind: 'ambusher', releaseDelay: 60 },    // pen
+  { x: 13, y: 14, kind: 'flanker', releaseDelay: 180 },    // pen
+  { x: 14, y: 14, kind: 'shy', releaseDelay: 300 },        // pen
 ];
 
 window.MAZE = MAZE;
