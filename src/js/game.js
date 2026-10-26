@@ -27,6 +27,7 @@ function createGame() {
     state: 'start',
     score: 0,
     lives: 3,
+    tick: 0,
     dotsRemaining: dots,
     grid,
     pacman: {
@@ -42,6 +43,8 @@ function createGame() {
       dir: 'up',
       speed: GHOST_SPEED,
       kind: g.kind,
+      releaseAt: g.releaseDelay,
+      exiting: g.y > 11, // arranca dentro de la pen: cruza la puerta al salir
     } ) ),
   };
 }
@@ -51,14 +54,14 @@ function aligned( v ) {
 }
 
 // Una celda es muro para el actor dado?
-//   pacman: bloqueado por pared (1) y puerta (3)
-//   ghost:  bloqueado solo por pared (1)
+//   pacman, ghost: bloqueados por pared (1) y puerta (3)
+//   ghost-exiting: bloqueado solo por pared (1) — unico que cruza la puerta
 function isWall( grid, x, y, actor ) {
   if ( y < 0 || y >= grid.length ) return true;
   if ( x < 0 || x >= grid[ 0 ].length ) return true;
   const v = grid[ y ][ x ];
   if ( v === 1 ) return true;
-  if ( v === 3 && actor === 'pacman' ) return true;
+  if ( v === 3 && actor !== 'ghost-exiting' ) return true;
   return false;
 }
 
@@ -145,11 +148,21 @@ function moveGhost( game, g ) {
   const grid = game.grid;
   const width = grid[ 0 ].length;
 
+  if ( game.tick < g.releaseAt ) return; // congelado en la pen
+
   if ( aligned( g.x ) && aligned( g.y ) ) {
     g.x = Math.round( g.x );
     g.y = Math.round( g.y );
-    decideGhost( game, g );
-    if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
+    // Ya cruzo la puerta: vuelve a comportarse como fantasma normal.
+    if ( g.exiting && g.y <= 11 ) g.exiting = false;
+    if ( g.exiting ) {
+      // Salida fija: centrarse en la columna 13 y subir por la puerta.
+      g.dir = g.x !== 13 ? ( g.x < 13 ? 'right' : 'left' ) : 'up';
+    } else {
+      decideGhost( game, g );
+    }
+    const actor = g.exiting ? 'ghost-exiting' : 'ghost';
+    if ( !canMove( grid, g.x, g.y, g.dir, actor ) ) return;
   }
 
   const d = DIRS[ g.dir ];
@@ -176,6 +189,7 @@ function collides( a, b ) {
 }
 
 function update( game ) {
+  game.tick++; // shortcut: cuenta frames de rAF; en 144 Hz las salidas llegan antes
   movePacman( game );
   game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
 
