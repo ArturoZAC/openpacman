@@ -13,6 +13,20 @@ const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 
+// Estado inicial de un fantasma, segun su GHOST_STARTS.
+// exiting: los que arrancan dentro de la pen (y > 11) cruzan la puerta al salir.
+function spawnGhost( start ) {
+  return {
+    x: start.x,
+    y: start.y,
+    dir: 'up',
+    speed: GHOST_SPEED,
+    kind: start.kind,
+    releaseAt: start.releaseDelay,
+    exiting: start.y > 11,
+  };
+}
+
 // Crea una partida nueva. Copia MAZE (pristino) a game.grid para poder comer
 // dots sin destruir el original, y reiniciar.
 function createGame() {
@@ -37,15 +51,7 @@ function createGame() {
       nextDir: null,
       speed: PACMAN_SPEED,
     },
-    ghosts: GHOST_STARTS.map( ( g ) => ( {
-      x: g.x,
-      y: g.y,
-      dir: 'up',
-      speed: GHOST_SPEED,
-      kind: g.kind,
-      releaseAt: g.releaseDelay,
-      exiting: g.y > 11, // arranca dentro de la pen: cruza la puerta al salir
-    } ) ),
+    ghosts: GHOST_STARTS.map( spawnGhost ),
   };
 }
 
@@ -210,11 +216,8 @@ function resetPositions( game ) {
   p.y = PACMAN_START.y;
   p.dir = 'left';
   p.nextDir = null;
-  game.ghosts.forEach( ( g, i ) => {
-    g.x = GHOST_STARTS[ i ].x;
-    g.y = GHOST_STARTS[ i ].y;
-    g.dir = 'up';
-  } );
+  game.tick = 0;
+  game.ghosts = GHOST_STARTS.map( spawnGhost );
 }
 
 function collides( a, b ) {
