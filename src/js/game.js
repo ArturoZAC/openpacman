@@ -113,35 +113,68 @@ function movePacman( game ) {
   wrapTunnel( p, width );
 }
 
-function decideGhost( game, g ) {
-  const grid = game.grid;
-  const p = game.pacman;
+function cell( actor ) {
+  return { x: Math.round( actor.x ), y: Math.round( actor.y ) };
+}
 
+// Distancia entre celdas con wrap del tunel: min(|dx|, W - |dx|) + |dy|.
+function cellDistance( a, b ) {
+  const dx = Math.abs( a.x - b.x );
+  return Math.min( dx, MAZE[ 0 ].length - dx ) + Math.abs( a.y - b.y );
+}
+
+// Celda a `steps` por delante del actor, en su direccion actual.
+function ahead( actor, steps ) {
+  const c = cell( actor );
+  const d = DIRS[ actor.dir ] || { x: 0, y: 0 };
+  return { x: c.x + d.x * steps, y: c.y + d.y * steps };
+}
+
+// Cada comportamiento solo calcula un target; el movimiento lo resuelve el greedy.
+const GHOST_BEHAVIORS = {
+  aggressive: ( game ) => cell( game.pacman ),
+
+  ambusher: ( game ) => ahead( game.pacman, 4 ),
+
+  // 2*(P + 2*dir) - A, con A = celda del aggressive.
+  flanker: ( game ) => {
+    const p = ahead( game.pacman, 2 );
+    const a = cell( game.ghosts.find( ( o ) => o.kind === 'aggressive' ) );
+    return { x: 2 * p.x - a.x, y: 2 * p.y - a.y };
+  },
+
+  // Persigue de lejos; a <= 8 celdas se retira a la esquina inferior izquierda.
+  shy: ( game, g ) => {
+    const p = cell( game.pacman );
+    return cellDistance( cell( g ), p ) > 8 ? p : { x: 1, y: 29 };
+  },
+};
+
+// Selector greedy unico: minimiza la distancia al target.
+// Desempate determinista por orden de DIRS: left, right, up, down.
+function greedyDir( game, g, target ) {
+  const grid = game.grid;
   const options = Object.keys( DIRS ).filter(
     ( dir ) => dir !== OPPOSITE[ g.dir ] && canMove( grid, g.x, g.y, dir, 'ghost' )
   );
   // Sin salida (callejon): permitir el giro de 180.
-  const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
+  const choices = options.length ? options : [ OPPOSITE[ g.dir ] ];
 
-  if ( g.kind === 'hunter' ) {
-    const px = Math.round( p.x );
-    const py = Math.round( p.y );
-    let best = choices[ 0 ];
-    let bestDist = Infinity;
-    for ( const dir of choices ) {
-      const d = DIRS[ dir ];
-      const nx = g.x + d.x;
-      const ny = g.y + d.y;
-      const dist = Math.abs( nx - px ) + Math.abs( ny - py );
-      if ( dist < bestDist ) {
-        bestDist = dist;
-        best = dir;
-      }
+  let best = choices[ 0 ];
+  let bestDist = Infinity;
+  for ( const dir of choices ) {
+    const d = DIRS[ dir ];
+    const dist = cellDistance( { x: g.x + d.x, y: g.y + d.y }, target );
+    if ( dist < bestDist ) {
+      bestDist = dist;
+      best = dir;
     }
-    g.dir = best;
-  } else {
-    g.dir = choices[ Math.floor( Math.random() * choices.length ) ];
   }
+  return best;
+}
+
+function decideGhost( game, g ) {
+  g.dir = greedyDir( game, g, GHOST_BEHAVIORS[ g.kind ]( game, g ) );
 }
 
 function moveGhost( game, g ) {
